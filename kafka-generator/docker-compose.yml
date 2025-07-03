@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  generate-kafka-data:
+    build: .
+    image: generate-kafka-data
+    networks:
+      - kafka
+ 
+networks:
+  kafka:
+    external: true
+    name: disable_ipv6

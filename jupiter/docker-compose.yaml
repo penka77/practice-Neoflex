@@ -1,0 +1,19 @@
+version: '3'
+services:
+  jupyterlab:
+    build: .
+    container_name: jupyter
+    environment:
+      - GRANT_SUDO=yes
+      - JUPYTER_ENABLE_LAB=yes       # Активируем JupyterLab
+    user: root
+    networks:
+      - jupyter
+    ports:
+      - "8888:8888"                  # Проброс порта
+    
+      
+networks:
+  jupyter:
+    external: true
+    name: my_net

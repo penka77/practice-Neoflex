@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  generate-db-data:
+    build: .
+    image: generate-db-data
+    networks:
+      - postgres
+    
+networks:
+  postgres:
+    external: true
+    name: disable_ipv6
