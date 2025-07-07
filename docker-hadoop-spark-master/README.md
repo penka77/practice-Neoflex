@@ -28,7 +28,7 @@ Run `docker network inspect` on the network (e.g. `docker-hadoop-spark-hive_defa
 * Hive: http://<dockerhadoop_IP_address>:10000
 
 ## Important note regarding Docker Desktop
-Since Docker Desktop turned “Expose daemon on tcp://localhost:2375 without TLS” off by default there have been all kinds of connection problems running the complete docker-compose. Turning this option on again (Settings > General > Expose daemon on tcp://localhost:2375 without TLS) makes it all work. I’m still looking for a more secure solution to this.
+Since Docker Desktop turned "Expose daemon on tcp://localhost:2375 without TLS" off by default there have been all kinds of connection problems running the complete docker-compose. Turning this option on again (Settings > General > Expose daemon on tcp://localhost:2375 without TLS) makes it all work. I'm still looking for a more secure solution to this.
 
 
 ## Quick Start HDFS
@@ -259,3 +259,75 @@ The available configurations are:
 * /etc/hadoop/mapred-site.xml  MAPRED_CONF
 
 If you need to extend some other configuration file, refer to base/entrypoint.sh bash script.
+
+# Экспорт данных из PostgreSQL в HDFS через Spark (postgres-to-hdfs)
+
+## Описание
+Сервис `postgres-to-hdfs` позволяет экспортировать указанные таблицы из PostgreSQL в HDFS с помощью Spark. Экспорт выполняется в формате Parquet и JSON для каждой таблицы.
+
+## Как это работает
+- Сервис запускает Spark job (`export_to_hdfs.py`), который читает данные из PostgreSQL и пишет их в HDFS.
+- Все параметры подключения и список таблиц задаются через переменные окружения (см. docker-compose.yml).
+- Данные сохраняются в HDFS по пути `/user/hadoop/{table}_parquet` и `/user/hadoop/{table}_json`.
+
+## Запуск
+
+1. **Поднять все сервисы:**
+   ```sh
+   docker-compose up -d
+   ```
+
+2. **Посмотреть логи экспорта:**
+   ```sh
+   docker-compose logs -f postgres-to-hdfs
+   ```
+   В логах будет видно процесс экспорта и успешное завершение по каждой таблице.
+
+3. **Проверить файлы в HDFS:**
+   ```sh
+   docker-compose exec namenode hdfs dfs -ls /user/hadoop/
+   ```
+   Для просмотра содержимого конкретной папки:
+   ```sh
+   docker-compose exec namenode hdfs dfs -ls /user/hadoop/data_cards_parquet
+   docker-compose exec namenode hdfs dfs -ls /user/hadoop/data_cards_json
+   ```
+
+4. **Проверить через Web UI HDFS:**
+   - Откройте [http://localhost:9870/](http://localhost:9870/)
+   - Перейдите в "Utilities" → "Browse the file system"
+   - Перейдите в `/user/hadoop/` и проверьте наличие экспортированных данных
+
+## Изменение списка таблиц или параметров
+
+- Изменить список экспортируемых таблиц можно в переменной окружения `EXPORT_TABLES` в сервисе `postgres-to-hdfs` в файле `docker-compose.yml`:
+  ```yaml
+  environment:
+    - EXPORT_TABLES=data.cards,data.banks,data.peoples,data.organizations,data.mcc
+  ```
+- Для изменения параметров подключения к БД или HDFS — аналогично, через переменные окружения:
+  - `JDBC_URL`, `JDBC_USER`, `JDBC_PASSWORD`, `JDBC_DRIVER`, `HDFS_BASE_PATH`
+
+## Пример ручного запуска экспорта
+Если сервис уже поднят, можно вручную перезапустить экспорт:
+```sh
+docker-compose restart postgres-to-hdfs
+```
+
+## Возможные проблемы
+- Проверьте, что сервисы `postgres`, `namenode`, `spark-master` и `postgres-to-hdfs` запущены и работают.
+- Если экспорт не начинается — проверьте логи контейнера `postgres-to-hdfs`.
+- Если не видите файлов в HDFS — проверьте логи и корректность путей.
+
+## Пример структуры данных в HDFS
+```
+/user/hadoop/data_cards_parquet/
+/user/hadoop/data_cards_json/
+/user/hadoop/data_banks_parquet/
+...
+```
+
+---
+
+**Вопросы и помощь:**
+Если возникли вопросы или нужна помощь с настройкой — обращайтесь к разработчику или создайте issue.

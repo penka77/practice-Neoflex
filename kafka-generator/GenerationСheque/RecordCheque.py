@@ -20,7 +20,7 @@ class RecordCheque:
         self.__set_cursors()
 
     def stream_cheque(self):
-        producer = Producer({'bootstrap.servers': 'kafka1:19092'})
+        producer = Producer({'bootstrap.servers': 'kafka1:29092'})
         try:
             while True:
                 producer.poll(0)

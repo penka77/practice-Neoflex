@@ -1,15 +1,12 @@
-FROM python:3-alpine
+# Используем официальный образ Python
+FROM python:3.9-slim
 
-WORKDIR /usr/app/src
+WORKDIR /app
 
 COPY requirements.txt ./
-RUN \
- apk add --no-cache postgresql-libs && \
- apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev && \
- python3 -m pip install -r requirements.txt --no-cache-dir && \
- apk --purge del .build-deps
+RUN pip install --no-cache-dir -r requirements.txt
 
-ADD Generator ./Generator
-WORKDIR /usr/app/src/Generator
+COPY export_to_hdfs.py ./
+COPY postgresql-42.7.7.jar ./
 
-CMD [ "python", "main.py"]
+CMD ["python", "export_to_hdfs.py"]

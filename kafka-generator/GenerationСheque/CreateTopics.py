@@ -2,7 +2,7 @@ from confluent_kafka.admin import AdminClient, NewTopic
 
 
 def create_topics():
-    admin_client = AdminClient({'bootstrap.servers': 'kafka1'})
+    admin_client = AdminClient({'bootstrap.servers': 'kafka1:29092'})
 
     topic_list = [
         NewTopic("amur_topic", 1, 1),
