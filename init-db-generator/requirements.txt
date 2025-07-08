@@ -1,4 +1,0 @@
-psycopg2==2.9.10
-
-# pyspark нужен для экспорта из PostgreSQL в HDFS
-pyspark
