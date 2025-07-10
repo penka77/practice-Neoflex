@@ -4,7 +4,7 @@ from neva_topic_processor import NevaTopicProcessor
 from ob_topic_processor import ObTopicProcessor
 from volga_topic_processor import VolgaTopicProcessor
 from yenisei_topic_processor import YeniseiTopicProcessor
-from base_topic_processor import BaseTopicProcessor
+#from base_topic_processor import BaseTopicProcessor
 from typing import List
 import sys
 import traceback
@@ -25,16 +25,21 @@ def main() -> None:
             VolgaTopicProcessor(spark),
             YeniseiTopicProcessor(spark)
         ]
+        queries = []
+        print(f"[DEBUG] processors: {[type(p).__name__ for p in processors]}")
         for processor in processors:
+            print(f"[DEBUG] Starting processor for topic: {processor.topic}")
             parsed_df = processor.process()
             if parsed_df is None:
                 continue
-            parsed_df.writeStream \
-                .foreachBatch(lambda df, epoch_id: processor.write_to_hdfs(df, epoch_id)) \
+            query = parsed_df.writeStream \
+                .foreachBatch(lambda df, epoch_id, p=processor: p.write_to_hdfs(df, epoch_id)) \
                 .outputMode("append") \
                 .trigger(processingTime="10 seconds") \
                 .start()
-        spark.streams.awaitAnyTermination()
+            queries.append(query)
+        for query in queries:
+            query.awaitTermination()
     except Exception as e:
         print(f"[ERROR] Main error: {e}")
         traceback.print_exc(file=sys.stdout)
